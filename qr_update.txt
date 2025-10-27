@@ -1,0 +1,245 @@
+Python code:
+# finding qr by constructing from 1 to n
+import numpy as np
+import time
+import scipy.linalg as la
+
+def frob(A):
+    return np.linalg.norm(A, 'fro')
+
+def make_diag_positive(Q, R):
+    r = min(R.shape[0], R.shape[1])
+    d = np.sign(np.diag(R[:r, :r]))
+    d[d == 0] = 1.0
+    D = np.diag(d)
+    Q[:, :r] = Q[:, :r] @ D
+    R[:r, :] = D @ R[:r, :]
+    return Q, R
+
+def align_to_reference(Q, R, Qref, Rref):
+    """Align column signs so diffs reflect numerical differences only."""
+    r = min(R.shape[0], R.shape[1], Rref.shape[0], Rref.shape[1])
+    s = np.sign(np.diag(Rref[:r, :r])) * np.sign(np.diag(R[:r, :r]))
+    s[s == 0] = 1.0
+    S = np.diag(s)
+    Q[:, :r] = Q[:, :r] @ S
+    R[:r, :] = S @ R[:r, :]
+    return Q, R
+
+def givrot(a, b):
+    if b == 0.0:
+        return 1.0, 0.0
+    r = np.hypot(a, b)
+    return a / r, -b / r
+
+def qr_insert_column(Q, R, a, j):
+    a = a.reshape(-1, 1)
+    m, q = Q.shape
+    qR, n = R.shape
+    assert qR == q and 0 <= j <= n
+
+    # Project new column onto current Q; form residual
+    u = Q.T @ a
+    v = a - Q @ u
+
+    if m > q:
+        # Tall case: we can expand the column space
+        r = np.linalg.norm(v)
+        if r > 0:
+            q_newcol = v / r
+            Q = np.hstack([Q, q_newcol])
+            R = np.hstack([R[:, :j], u, R[:, j:]])
+            R = np.vstack([R, np.zeros((1, n+1))])
+            R[-1, j] = r
+            q += 1
+        else:
+            # If v==0 numerically, fall back to wide-case logic
+            R = np.hstack([R[:, :j], u, R[:, j:]])
+    else:
+        # Wide case: span(Q)=R^m, v==0; no new Q column, no extra R row
+        R = np.hstack([R[:, :j], u, R[:, j:]])
+
+    for i in range(q-1, 0, -1):
+        if i < j+1:
+            continue
+        a_ = R[i-1, j]
+        b_ = R[i,   j]
+        if abs(b_) < 1e-16 * (abs(a_) + abs(b_)):
+            continue
+        c, s = givrot(a_, b_)
+        G = np.array([[c, -s], [s, c]])
+        # Apply G to rows (left-multiply block of R), from column j onward
+        R[i-1:i+1, j:] = G @ R[i-1:i+1, j:]
+        # Apply G^T to the matching columns of Q
+        Q[:, i-1:i+1] = Q[:, i-1:i+1] @ G.T
+
+    return Q, R
+
+# comparison
+def build_full(A):
+    t0 = time.perf_counter()
+    Q, R = np.linalg.qr(A, mode='reduced')
+    Q, R = make_diag_positive(Q, R)
+    t = time.perf_counter() - t0
+    return Q, R, t
+
+def build_incremental_mine(A):
+    m, n = A.shape
+    a0 = A[:, 0]
+    r0 = np.linalg.norm(a0)
+    if r0 == 0.0:
+        a0 = a0 + 1e-12
+        r0 = np.linalg.norm(a0)
+    Q = (a0 / r0).reshape(-1, 1)
+    R = np.array([[r0]], dtype=float) 
+    t0 = time.perf_counter()
+    for j in range(1, n):
+        Q, R = qr_insert_column(Q, R, A[:, j], j=Q.shape[1])  # append at end
+    Q, R = make_diag_positive(Q, R)
+    t = time.perf_counter() - t0
+    return Q, R, t
+
+def build_incremental_scipy(A):
+    m, n = A.shape
+    Q, R = np.linalg.qr(A[:, [0]], mode='reduced')
+    t0 = time.perf_counter()
+    for j in range(1, n):
+        Q, R = la.qr_insert(Q, R, A[:, j], Q.shape[1], which='col')
+    Q, R = make_diag_positive(Q, R)
+    return Q, R, time.perf_counter() - t0
+
+def bench_threeways(m, n, runs, seed=0):
+    rng = np.random.default_rng(seed)
+    print(f"Incremental QR vs Full QR")
+    print(f"Dimensions: m={m}, n={n}, runs={runs}\n")
+    print(" run |  t_full[s] | t_incr_mine[s] | t_incr_scipy[s] | sp_mine | sp_scipy | "
+          "||Q^TQ-I||_F | ||tril(R,-1)||_F | ||QR-A||/||A|| | rel||Q||_F | rel||R||_F")
+
+    t_fulls = []; t_mines = []; t_scis = []
+    relQ_m = []; relR_m = []
+    relQ_s = []; relR_s = []
+    orth_m = []; tri_m = []; recon_m = []
+
+    for r in range(1, runs+1):
+        A = rng.standard_normal((m, n))
+        Qf, Rf, tf = build_full(A)
+        Qi, Ri, ti = build_incremental_mine(A)
+        Qs, Rs, ts = build_incremental_scipy(A)
+
+        Qi_, Ri_ = align_to_reference(Qi.copy(), Ri.copy(), Qf, Rf)
+        Qs_, Rs_ = align_to_reference(Qs.copy(), Rs.copy(), Qf, Rf)
+
+        orth_err  = np.linalg.norm(Qi.T @ Qi - np.eye(n), 'fro')
+        tri_err   = np.linalg.norm(np.tril(Ri, -1), 'fro')
+        recon_err = np.linalg.norm(Qi @ Ri - A, 'fro') / (np.linalg.norm(A, 'fro') + 1e-16)
+
+        relQ_m.append(frob(Qi_ - Qf) / (frob(Qf) + 1e-16))
+        relR_m.append(frob(Ri_ - Rf) / (frob(Rf) + 1e-16))
+        relQ_s.append(frob(Qs_ - Qf) / (frob(Qf) + 1e-16))
+        relR_s.append(frob(Rs_ - Rf) / (frob(Rf) + 1e-16))
+
+        t_fulls.append(tf); t_mines.append(ti); t_scis.append(ts)
+        orth_m.append(orth_err); tri_m.append(tri_err); recon_m.append(recon_err)
+
+        print(f"{r:4d} | {tf:10.6f} | {ti:14.6f} | {ts:14.6f} | "
+              f"{tf/ti:7.2f} | {tf/ts:8.2f} | "
+              f"{orth_err:10.3e} | {tri_err:12.3e} | {recon_err:11.3e} | "
+              f"{relQ_m[-1]:9.3e} | {relR_m[-1]:9.3e}")
+
+    print("\n Averages over runs")
+    print(f"avg t_full         = {np.mean(t_fulls):.6f} s")
+    print(f"avg t_incr (mine)  = {np.mean(t_mines):.6f} s   (speedup {np.mean(t_fulls)/np.mean(t_mines):.2f}×)")
+    print(f"avg t_incr (scipy) = {np.mean(t_scis):.6f} s   (speedup {np.mean(t_fulls)/np.mean(t_scis):.2f}×)")
+    print(f"avg ||Q^TQ-I||_F   = {np.mean(orth_m):.3e}")
+    print(f"avg ||tril(R,-1)||_F = {np.mean(tri_m):.3e}")
+    print(f"avg ||QR-A||/||A|| = {np.mean(recon_m):.3e}")
+    print(f"avg rel||Q||_F (mine) = {np.mean(relQ_m):.3e}, rel||R||_F (mine) = {np.mean(relR_m):.3e}")
+    print(f"avg rel||Q||_F (scpy) = {np.mean(relQ_s):.3e}, rel||R||_F (scpy) = {np.mean(relR_s):.3e}")
+
+bench_threeways(m=100, n=50, runs=10, seed=10)
+
+Large cases:
+# large case analysis:
+def averaged_case(m, n, runs=10, seed=0):
+    rng = np.random.default_rng(seed)
+    t_full = []; t_mine = []; t_sci = []
+    relQ_m = []; relR_m = []; relQ_s = []; relR_s = []
+    orth_m = []; tri_m = []; recon_m = []
+    orth_s = []; tri_s = []; recon_s = []
+
+    for r in range(runs):
+        A = rng.standard_normal((m, n))
+
+        # Reference
+        Qref, Rref, tf = build_full(A)
+
+        # mine
+        Qm, Rm, tm = build_incremental_mine(A)
+        Qm_, Rm_ = align_to_reference(Qm, Rm, Qref, Rref)
+
+        # SciPy
+        Qs, Rs, ts = build_incremental_scipy(A)
+        Qs_, Rs_ = align_to_reference(Qs, Rs, Qref, Rref)
+
+        # Times
+        t_full.append(tf); t_mine.append(tm); t_sci.append(ts)
+
+        # Accuracies
+        relQ_m.append(frob(Qm_ - Qref) / (frob(Qref) + 1e-16))
+        relR_m.append(frob(Rm_ - Rref) / (frob(Rref) + 1e-16))
+        relQ_s.append(frob(Qs_ - Qref) / (frob(Qref) + 1e-16))
+        relR_s.append(frob(Rs_ - Rref) / (frob(Rref) + 1e-16))
+
+        # Diagnostics
+        orth_m.append(np.linalg.norm(Qm.T @ Qm - np.eye(n), 'fro'))
+        tri_m.append(np.linalg.norm(np.tril(Rm, -1), 'fro'))
+        recon_m.append(np.linalg.norm(Qm @ Rm - A, 'fro') / (np.linalg.norm(A, 'fro') + 1e-16))
+
+        orth_s.append(np.linalg.norm(Qs.T @ Qs - np.eye(n), 'fro'))
+        tri_s.append(np.linalg.norm(np.tril(Rs, -1), 'fro'))
+        recon_s.append(np.linalg.norm(Qs @ Rs - A, 'fro') / (np.linalg.norm(A, 'fro') + 1e-16))
+
+    out = {
+        "m": m, "n": n, "runs": runs,
+        "t_full_avg":  np.mean(t_full),
+        "t_mine_avg":  np.mean(t_mine),
+        "t_sci_avg":   np.mean(t_sci),
+        "speedup_mine": np.mean(t_full) / np.mean(t_mine),
+        "speedup_sci":  np.mean(t_full) / np.mean(t_sci),
+        "relQ_m_avg": np.mean(relQ_m), "relR_m_avg": np.mean(relR_m),
+        "relQ_s_avg": np.mean(relQ_s), "relR_s_avg": np.mean(relR_s),
+        "orth_m_avg": np.mean(orth_m), "tri_m_avg": np.mean(tri_m), "recon_m_avg": np.mean(recon_m),
+        "orth_s_avg": np.mean(orth_s), "tri_s_avg": np.mean(tri_s), "recon_s_avg": np.mean(recon_s),
+    }
+    return out
+
+def run_large_sweep(
+    m_list=(1000, 2000, 5000),
+    n_fracs=(0.1, 0.2, 0.5, 1.0),
+    runs=10,
+    seed=0
+):
+    results = []
+    print("=== Incremental QR (averages over runs) ===\n")
+    for m in m_list:
+        for frac in n_fracs:
+            n = int(m * frac)
+            res = averaged_case(m, n, runs=runs, seed=seed)
+            results.append(res)
+
+            print(f"(m={m}, n={n}), averaged over {runs} runs")
+            print(f"  avg t_full        = {res['t_full_avg']:.6f} s")
+            print(f"  avg t_incr (mine) = {res['t_mine_avg']:.6f} s  | speedup = {res['speedup_mine']:.2f}×")
+            print(f"  avg t_incr (sci)  = {res['t_sci_avg']:.6f} s  | speedup = {res['speedup_sci']:.2f}×")
+            print(f"  rel||Q||_F (mine) = {res['relQ_m_avg']:.3e},  rel||R||_F (mine) = {res['relR_m_avg']:.3e}")
+            print(f"  rel||Q||_F (sci)  = {res['relQ_s_avg']:.3e},  rel||R||_F (sci)  = {res['relR_s_avg']:.3e}")
+            print(f"  ||QᵀQ−I||_F (mine) = {res['orth_m_avg']:.3e}, ||tril(R,-1)||_F (mine) = {res['tri_m_avg']:.3e},  ||QR−A||/||A|| (mine) = {res['recon_m_avg']:.3e}")
+            print(f"  ||QᵀQ−I||_F (sci)  = {res['orth_s_avg']:.3e}, ||tril(R,-1)||_F (sci)  = {res['tri_s_avg']:.3e},  ||QR−A||/||A|| (sci)  = {res['recon_s_avg']:.3e}")
+            print()
+    return results
+
+# Run the sweep
+_ = run_large_sweep(m_list=(1000, 2000, 5000),
+                    n_fracs=(0.1, 0.2, 0.5, 1.0),
+                    runs=10,
+                    seed=0)

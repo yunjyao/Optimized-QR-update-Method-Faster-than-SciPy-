@@ -1,0 +1,109 @@
+=== Incremental QR (averages over runs) ===
+
+(m=1000, n=100), averaged over 10 runs
+  avg t_full        = 0.045200 s
+  avg t_incr (mine) = 0.036452 s  | speedup = 1.24×
+  avg t_incr (sci)  = 0.044255 s  | speedup = 1.02×
+  rel||Q||_F (mine) = 6.046e-16,  rel||R||_F (mine) = 2.900e-16
+  rel||Q||_F (sci)  = 6.283e-16,  rel||R||_F (sci)  = 2.909e-16
+  ||QᵀQ−I||_F (mine) = 3.636e-15, ||tril(R,-1)||_F (mine) = 0.000e+00,  ||QR−A||/||A|| (mine) = 1.046e-16
+  ||QᵀQ−I||_F (sci)  = 3.630e-15, ||tril(R,-1)||_F (sci)  = 0.000e+00,  ||QR−A||/||A|| (sci)  = 2.169e-16
+
+(m=1000, n=200), averaged over 10 runs
+  avg t_full        = 0.024860 s
+  avg t_incr (mine) = 0.067781 s  | speedup = 0.37×
+  avg t_incr (sci)  = 0.068803 s  | speedup = 0.36×
+  rel||Q||_F (mine) = 6.364e-16,  rel||R||_F (mine) = 3.402e-16
+  rel||Q||_F (sci)  = 6.831e-16,  rel||R||_F (sci)  = 3.434e-16
+  ||QᵀQ−I||_F (mine) = 6.450e-15, ||tril(R,-1)||_F (mine) = 0.000e+00,  ||QR−A||/||A|| (mine) = 1.563e-16
+  ||QᵀQ−I||_F (sci)  = 6.579e-15, ||tril(R,-1)||_F (sci)  = 0.000e+00,  ||QR−A||/||A|| (sci)  = 2.883e-16
+
+(m=1000, n=500), averaged over 10 runs
+  avg t_full        = 0.130448 s
+  avg t_incr (mine) = 0.426751 s  | speedup = 0.31×
+  avg t_incr (sci)  = 0.527408 s  | speedup = 0.25×
+  rel||Q||_F (mine) = 9.560e-16,  rel||R||_F (mine) = 5.390e-16
+  rel||Q||_F (sci)  = 1.053e-15,  rel||R||_F (sci)  = 5.653e-16
+  ||QᵀQ−I||_F (mine) = 1.833e-14, ||tril(R,-1)||_F (mine) = 0.000e+00,  ||QR−A||/||A|| (mine) = 2.906e-16
+  ||QᵀQ−I||_F (sci)  = 1.932e-14, ||tril(R,-1)||_F (sci)  = 0.000e+00,  ||QR−A||/||A|| (sci)  = 4.474e-16
+
+(m=1000, n=1000), averaged over 10 runs
+  avg t_full        = 0.297563 s
+  avg t_incr (mine) = 2.631709 s  | speedup = 0.11×
+  avg t_incr (sci)  = 4.363768 s  | speedup = 0.07×
+  rel||Q||_F (mine) = 1.247e-12,  rel||R||_F (mine) = 1.103e-14
+  rel||Q||_F (sci)  = 3.436e-15,  rel||R||_F (sci)  = 1.114e-15
+  ||QᵀQ−I||_F (mine) = 5.578e-11, ||tril(R,-1)||_F (mine) = 0.000e+00,  ||QR−A||/||A|| (mine) = 4.624e-16
+  ||QᵀQ−I||_F (sci)  = 3.263e-14, ||tril(R,-1)||_F (sci)  = 0.000e+00,  ||QR−A||/||A|| (sci)  = 7.994e-16
+
+(m=2000, n=200), averaged over 10 runs
+  avg t_full        = 0.040429 s
+  avg t_incr (mine) = 0.109381 s  | speedup = 0.37×
+  avg t_incr (sci)  = 0.134428 s  | speedup = 0.30×
+  rel||Q||_F (mine) = 5.798e-16,  rel||R||_F (mine) = 3.044e-16
+  rel||Q||_F (sci)  = 6.299e-16,  rel||R||_F (sci)  = 3.080e-16
+  ||QᵀQ−I||_F (mine) = 5.319e-15, ||tril(R,-1)||_F (mine) = 0.000e+00,  ||QR−A||/||A|| (mine) = 1.240e-16
+  ||QᵀQ−I||_F (sci)  = 5.462e-15, ||tril(R,-1)||_F (sci)  = 0.000e+00,  ||QR−A||/||A|| (sci)  = 2.773e-16
+
+(m=2000, n=400), averaged over 10 runs
+  avg t_full        = 0.138752 s
+  avg t_incr (mine) = 0.489900 s  | speedup = 0.28×
+  avg t_incr (sci)  = 0.711066 s  | speedup = 0.20×
+  rel||Q||_F (mine) = 6.706e-16,  rel||R||_F (mine) = 3.854e-16
+  rel||Q||_F (sci)  = 7.598e-16,  rel||R||_F (sci)  = 3.954e-16
+  ||QᵀQ−I||_F (mine) = 1.032e-14, ||tril(R,-1)||_F (mine) = 0.000e+00,  ||QR−A||/||A|| (mine) = 1.801e-16
+  ||QᵀQ−I||_F (sci)  = 1.091e-14, ||tril(R,-1)||_F (sci)  = 0.000e+00,  ||QR−A||/||A|| (sci)  = 3.732e-16
+
+(m=2000, n=1000), averaged over 10 runs
+  avg t_full        = 0.639870 s
+  avg t_incr (mine) = 4.627209 s  | speedup = 0.14×
+  avg t_incr (sci)  = 7.005946 s  | speedup = 0.09×
+  rel||Q||_F (mine) = 1.106e-15,  rel||R||_F (mine) = 6.397e-16
+  rel||Q||_F (sci)  = 1.280e-15,  rel||R||_F (sci)  = 6.861e-16
+  ||QᵀQ−I||_F (mine) = 3.269e-14, ||tril(R,-1)||_F (mine) = 0.000e+00,  ||QR−A||/||A|| (mine) = 3.341e-16
+  ||QᵀQ−I||_F (sci)  = 3.601e-14, ||tril(R,-1)||_F (sci)  = 0.000e+00,  ||QR−A||/||A|| (sci)  = 5.704e-16
+
+(m=2000, n=2000), averaged over 10 runs
+  avg t_full        = 2.483821 s
+  avg t_incr (mine) = 25.220461 s  | speedup = 0.10×
+  avg t_incr (sci)  = 38.883800 s  | speedup = 0.06×
+  rel||Q||_F (mine) = 4.684e-12,  rel||R||_F (mine) = 3.341e-14
+  rel||Q||_F (sci)  = 6.546e-15,  rel||R||_F (sci)  = 1.373e-15
+  ||QᵀQ−I||_F (mine) = 2.962e-10, ||tril(R,-1)||_F (mine) = 0.000e+00,  ||QR−A||/||A|| (mine) = 5.556e-16
+  ||QᵀQ−I||_F (sci)  = 6.027e-14, ||tril(R,-1)||_F (sci)  = 0.000e+00,  ||QR−A||/||A|| (sci)  = 1.059e-15
+
+(m=5000, n=500), averaged over 10 runs
+  avg t_full        = 0.718865 s
+  avg t_incr (mine) = 2.568912 s  | speedup = 0.28×
+  avg t_incr (sci)  = 3.636554 s  | speedup = 0.20×
+  rel||Q||_F (mine) = 6.109e-16,  rel||R||_F (mine) = 3.687e-16
+  rel||Q||_F (sci)  = 6.767e-16,  rel||R||_F (sci)  = 2.897e-16
+  ||QᵀQ−I||_F (mine) = 1.194e-14, ||tril(R,-1)||_F (mine) = 0.000e+00,  ||QR−A||/||A|| (mine) = 1.520e-16
+  ||QᵀQ−I||_F (sci)  = 8.837e-15, ||tril(R,-1)||_F (sci)  = 0.000e+00,  ||QR−A||/||A|| (sci)  = 4.045e-16
+
+(m=5000, n=1000), averaged over 10 runs
+  avg t_full        = 1.749398 s
+  avg t_incr (mine) = 11.300511 s  | speedup = 0.15×
+  avg t_incr (sci)  = 18.796163 s  | speedup = 0.09×
+  rel||Q||_F (mine) = 7.782e-16,  rel||R||_F (mine) = 4.980e-16
+  rel||Q||_F (sci)  = 8.897e-16,  rel||R||_F (sci)  = 4.026e-16
+  ||QᵀQ−I||_F (mine) = 2.348e-14, ||tril(R,-1)||_F (mine) = 0.000e+00,  ||QR−A||/||A|| (mine) = 2.228e-16
+  ||QᵀQ−I||_F (sci)  = 1.840e-14, ||tril(R,-1)||_F (sci)  = 0.000e+00,  ||QR−A||/||A|| (sci)  = 5.505e-16
+
+(m=5000, n=2500), averaged over 10 runs
+  avg t_full        = 9.580661 s
+  avg t_incr (mine) = 97.498611 s  | speedup = 0.10×
+  avg t_incr (sci)  = 189.755743 s  | speedup = 0.05×
+  rel||Q||_F (mine) = 1.447e-15,  rel||R||_F (mine) = 8.613e-16
+  rel||Q||_F (sci)  = 1.610e-15,  rel||R||_F (sci)  = 7.733e-16
+  ||QᵀQ−I||_F (mine) = 7.676e-14, ||tril(R,-1)||_F (mine) = 0.000e+00,  ||QR−A||/||A|| (mine) = 4.164e-16
+  ||QᵀQ−I||_F (sci)  = 6.746e-14, ||tril(R,-1)||_F (sci)  = 0.000e+00,  ||QR−A||/||A|| (sci)  = 8.200e-16
+
+(m=5000, n=5000), averaged over 10 runs
+  avg t_full        = 36.554339 s
+  avg t_incr (mine) = 532.514709 s  | speedup = 0.07×
+  avg t_incr (sci)  = 991.909827 s  | speedup = 0.04×
+  rel||Q||_F (mine) = 4.563e-12,  rel||R||_F (mine) = 4.261e-14
+  rel||Q||_F (sci)  = 6.965e-15,  rel||R||_F (sci)  = 1.719e-15
+  ||QᵀQ−I||_F (mine) = 4.563e-10, ||tril(R,-1)||_F (mine) = 0.000e+00,  ||QR−A||/||A|| (mine) = 6.141e-16
+  ||QᵀQ−I||_F (sci)  = 1.208e-13, ||tril(R,-1)||_F (sci)  = 0.000e+00,  ||QR−A||/||A|| (sci)  = 1.318e-15
