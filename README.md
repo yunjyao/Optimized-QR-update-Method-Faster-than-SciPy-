@@ -19,8 +19,11 @@ Simple API: Operates on (Q, R) and inserts a column a at position j using Givens
 All tests average 10 runs of standard-normal matrices. Full scripts for three-way comparisons (full QR, ours, SciPy) are included. Speedup below is computed against SciPy’s incremental routine (larger is better). See run_large_sweep(...) in the benchmark file. 
 
 
-Dimensions (m, n)	Avg time (ours)	Avg time (SciPy)	Our speedup vs SciPy
-(1000, 1000)	2.6317 s	4.3638 s	1.66×
-(2000, 2000)	25.2205 s	38.8838 s	1.54×
-(5000, 2500)	97.4986 s	189.7557 s	1.95×
-(5000, 5000)	532.5147 s	991.9098 s	1.86×
+| Dimensions (m, n) | Avg time (Mine) | Avg time (SciPy) | Speedup |
+|------------------:|----------------:|-----------------:|--------:|
+| (1000, 1000)      | 2.63 s          | 4.36 s           | **1.66×** |
+| (2000, 2000)      | 25.22 s         | 38.88 s          | **1.54×** |
+| (5000, 2500)      | 97.50 s         | 189.76 s         | **1.95×** |
+| (5000, 5000)      | 532.51 s        | 991.91 s         | **1.86×** |
+
+
